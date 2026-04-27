@@ -154,4 +154,4 @@ After `npm run dev`:
 
 ## License
 
-MIT — Copyright (c) 2020 Traversy Media. See [LICENSE](LICENSE) for details.
+MIT — Copyright (c) 2020 Traversy Media.
