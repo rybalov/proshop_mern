@@ -36,17 +36,15 @@ proshop_mern/
 │   ├── utils/generateToken.js    # JWT helper
 │   ├── seeder.js                 # DB seed/destroy script
 │   └── server.js                 # ★ Express entry point
-├── frontend/
-│   ├── public/
-│   └── src/
-│       ├── actions/              # Redux thunk action creators
-│       ├── constants/            # Action type string constants
-│       ├── reducers/             # Redux reducers
-│       ├── components/           # Reusable UI (Header, Footer, Loader, Rating…)
-│       ├── screens/              # Page-level components (15 screens)
-│       ├── store.js              # Redux store configuration
-│       ├── App.js                # Router & layout
-│       └── index.js              # ★ React entry point
+├── frontend/src/
+│   ├── actions/                  # Redux thunk action creators
+│   ├── constants/                # Action type string constants
+│   ├── reducers/                 # Redux reducers
+│   ├── components/               # Reusable UI (Header, Footer, Loader, Rating…)
+│   ├── screens/                  # Page-level components (15 screens)
+│   ├── store.js                  # Redux store configuration
+│   ├── App.js                    # Router & layout
+│   └── index.js                  # ★ React entry point
 ├── uploads/                      # User-uploaded images (served statically)
 ├── package.json                  # Root: backend deps + dev scripts
 ├── Procfile                      # Heroku start command
@@ -58,32 +56,23 @@ proshop_mern/
 ## 4. Commands
 
 ```bash
-# Install deps (root = backend; frontend has its own package.json)
-npm install && npm install --prefix frontend
-
-# Development (concurrently: Express + CRA dev server)
-npm run dev
-
-# Backend only (nodemon)
-npm run server
-
-# Frontend only (CRA)
-npm run client
-
-# Seed database
-npm run data:import      # import sample data
-npm run data:destroy     # wipe all collections
-
-# Frontend build (production)
-npm run build --prefix frontend
-
-# Frontend tests
-npm test --prefix frontend
+npm install && npm install --prefix frontend   # Install all deps
+npm run dev              # Dev: Express + CRA concurrently
+npm run server           # Backend only (nodemon)
+npm run client           # Frontend only (CRA)
+npm run data:import      # Seed sample data
+npm run data:destroy     # Wipe all collections
+npm run build --prefix frontend   # Production build
+npm test --prefix frontend        # Frontend tests (Jest/RTL)
 ```
 
-> There is **no linter, formatter, or backend test suite** configured. Frontend uses CRA's default ESLint (`eslint-config-react-app`) and Jest/RTL scaffolding but has no written tests.
+> **No linter, formatter, or backend test suite** configured. Frontend uses CRA's default ESLint (`eslint-config-react-app`) and Jest/RTL scaffolding but has no written tests.
 
 ## 5. Conventions
+
+### 5.0 Code Style
+- **Indentation:** 4 spaces. **Line width:** 100 characters max.
+- **Quotes:** Single quotes everywhere. **Semicolons:** Required.
 
 ### 5.1 File Naming
 - **Backend:** camelCase — `productController.js`, `authMiddleware.js`, `userModel.js`.
@@ -92,12 +81,11 @@ npm test --prefix frontend
 
 ### 5.2 Imports & Exports
 - ES Modules everywhere (`import`/`export`). Backend files use `.js` extension in imports.
-- **Models & components:** `export default`.
-- **Controller functions:** named export block — `export { fn1, fn2, fn3 }`.
+- **Models & components:** `export default`. **Controllers:** named export block `export { fn1, fn2 }`.
 - **Constants:** individual named exports — `export const PRODUCT_LIST_REQUEST = '…'`.
 
 ### 5.3 Backend Controller Pattern
-Every controller function is wrapped with `express-async-handler` and preceded by a JSDoc-style comment block:
+Every controller is wrapped with `express-async-handler` and preceded by a JSDoc-style comment:
 ```js
 // @desc    Fetch single product
 // @route   GET /api/products/:id
@@ -106,67 +94,72 @@ const getProductById = asyncHandler(async (req, res) => { … })
 ```
 
 ### 5.4 Error Handling
-- **Backend:** set status code → `throw new Error('message')`. Global `errorHandler` middleware returns `{ message, stack }` (stack only in development).
-- **Frontend actions:** `try/catch` with `error.response?.data.message ?? error.message`. Token failure triggers `dispatch(logout())`.
+
+**Backend:**
+1. Every controller wrapped in `asyncHandler` — never use bare `async (req, res)`.
+2. Signal errors by setting status then throwing: `res.status(404); throw new Error('Product not found');`
+3. Global error middleware responds with `{ message, stack }` (stack only in dev). Status defaults to `500` if still `200`.
+4. `notFound` middleware catches undefined routes → `404`. Auth middleware throws `401` with `'Not authorized, token failed'` / `'Not authorized, no token'` / `'Not authorized as an admin'`.
+5. Never place code after `throw` — it is unreachable.
+
+**Frontend (Redux actions):**
+1. Every async action uses `try/catch`. Error extraction: prefer `error.response.data.message` over `error.message`.
+2. Token expiry (`'Not authorized, token failed'`) auto-dispatches `logout()` to clear `localStorage`.
+3. UI renders errors via `<Message variant='danger'>{error}</Message>`.
+```js
+catch (error) {
+    const message = error.response && error.response.data.message
+        ? error.response.data.message : error.message;
+    if (message === 'Not authorized, token failed') { dispatch(logout()); }
+    dispatch({ type: ACTION_FAIL, payload: message });
+}
+```
 
 ### 5.5 Redux Flow (Actions → Constants → Reducers)
 - One file per domain in each of `actions/`, `constants/`, `reducers/`.
 - Constant triplet: `DOMAIN_ACTION_REQUEST`, `_SUCCESS`, `_FAIL` (optional `_RESET`).
 - Reducer shape: `{ loading, error, <data> }`.
-- Authenticated requests: extract `userInfo.token` from `getState()`, pass as `Authorization: Bearer <token>`.
-- Persistence: cart items, user info, shipping address, payment method stored in `localStorage`.
+- Auth requests: extract `userInfo.token` from `getState()`, pass as `Authorization: Bearer <token>`.
+- Persistence: cart, user info, shipping, payment method stored in `localStorage`.
 
 ### 5.6 Screen Component Structure
 ```js
 const ScreenName = ({ match, location, history }) => {
-  // 1. Local state (useState)
-  // 2. Redux hooks (useDispatch, useSelector)
-  // 3. Side effects (useEffect → dispatch)
-  // 4. Event handlers (*Handler suffix)
-  // 5. Conditional renders (Loader / Message)
-  // 6. Main JSX
+  // 1. Local state (useState)        // 4. Event handlers (*Handler suffix)
+  // 2. Redux hooks (useDispatch/Sel)  // 5. Conditional renders (Loader/Message)
+  // 3. Side effects (useEffect)       // 6. Main JSX
 }
 export default ScreenName
 ```
 
 ### 5.7 Routing
-- React Router v5 with `<Route>` inside `<Router>`.
-- Route props destructured: `match.params`, `location.search`, `history.push`.
-- Admin routes prefixed `/admin/`.
+- React Router v5: `match.params`, `location.search`, `history.push`. Admin routes prefixed `/admin/`.
 
 ### 5.8 Auth
-- JWT with 30-day expiry stored in `localStorage`.
-- Backend middleware chain: `protect` (verifies token) → `admin` (checks `isAdmin` flag).
-- Token sent via `Authorization: Bearer <token>` header.
+- JWT 30-day expiry in `localStorage`. Middleware chain: `protect` → `admin`. Header: `Authorization: Bearer <token>`.
 
 ## 6. What NOT To Do
 
-### Do not skip `asyncHandler`
-Every async route handler **must** be wrapped in `asyncHandler`. Naked `async (req, res)` will swallow errors silently.
+- **Don't skip `asyncHandler`** — bare `async (req, res)` swallows errors silently.
+- **Don't put code after `throw`** — it's unreachable (see `orderController.js`).
+- **Don't omit `return` after `next()`** — `userModel.js` pre-save hook risks double hashing. Always `return next()`.
+- **Don't pass user input to `$regex`** — `productController.js` is vulnerable to ReDoS. Escape special chars or use `$text`.
+- **Don't commit `.env`** — secrets (`JWT_SECRET`, `MONGO_URI`, `PAYPAL_CLIENT_ID`) must stay out of version control.
+- **Don't accept uploads without size limits** — add `limits: { fileSize: <max> }` to Multer config.
+- **Don't skip request body validation** — use Joi / express-validator or manual checks before DB writes.
+- **Don't introduce new state libraries** — follow existing `REQUEST/SUCCESS/FAIL` + thunk pattern.
+- **Don't add class components** — the entire frontend uses functional components with hooks.
+- **Don't use `require()`** — project is `"type": "module"`. Always use ES `import`/`export`.
 
-### Do not put code after `throw`
-There is an unreachable `return` after `throw new Error(…)` in `orderController.js`. Never place statements after `throw`.
+## 7. Pull Request Approval Criteria
 
-### Do not forget `return` after `next()` in middleware
-`userModel.js` pre-save hook calls `next()` without `return` when the password is not modified, risking double hashing. Always `return next()`.
+**Must have (blockers):**
+- All CI checks pass
+- Architecture patterns followed
+- Proper error handling
+- No security issues
 
-### Do not pass user input directly to MongoDB `$regex`
-`productController.js` feeds `req.query.keyword` straight into `$regex` — this is vulnerable to ReDoS. Escape special regex characters or use `$text` search.
-
-### Do not commit `.env`
-The `.gitignore` excludes `.env`, but verify it stays that way. Secrets (`JWT_SECRET`, `MONGO_URI`, `PAYPAL_CLIENT_ID`) must never be checked in.
-
-### Do not accept uploads without size limits
-`uploadRoutes.js` has no `limits` option on Multer — add `limits: { fileSize: <max> }`.
-
-### Do not ignore request body validation
-Controllers trust `req.body` without validation. Use a library (e.g., Joi, express-validator) or at minimum manual checks before writing to the database.
-
-### Do not create new reducers/actions in a different style
-Follow the existing `REQUEST/SUCCESS/FAIL` constant triplet and `asyncHandler` thunk pattern. Do not introduce Redux Toolkit, Zustand, or other state libraries without a full migration.
-
-### Do not add class components
-The entire frontend uses functional components with hooks. Keep it consistent.
-
-### Do not use `require()`
-The project is `"type": "module"`. Always use ES `import`/`export`.
+**Should have:**
+- Tests for new functionality
+- Documentation updated if needed
+- No code smells (functions <50 lines)
