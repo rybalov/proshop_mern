@@ -4,6 +4,8 @@ E-commerce platform for browsing products, managing a shopping cart, and placing
 
 > **Note:** The upstream repository is archived. The author recommends [proshop-v2](https://github.com/bradtraversy/proshop-v2) (Redux Toolkit). This fork is maintained independently.
 
+![screenshot](https://github.com/bradtraversy/proshop_mern/blob/master/uploads/Screen%20Shot%202020-09-29%20at%205.50.52%20PM.png)
+
 ## Tech Stack
 
 | Layer       | Package                  | Version         |
