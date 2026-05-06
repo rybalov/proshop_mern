@@ -158,6 +158,37 @@ After `npm run dev`:
 ### Mongoose deprecation warnings
 - `useCreateIndex`, `useNewUrlParser`, `useUnifiedTopology` options in `config/db.js` are for Mongoose 5.x. If you upgrade to Mongoose 6+, remove these options (they are the defaults in v6).
 
+## Docker
+
+Run the entire stack (app + MongoDB) with Docker Compose:
+
+```bash
+# Start all services (builds on first run)
+docker compose up -d
+
+# Seed the database (optional)
+docker compose exec backend node backend/seeder.js
+
+# Stop
+docker compose down
+
+# Stop and remove volumes (wipes DB)
+docker compose down -v
+```
+
+Services:
+| Service | Port | Description |
+|---------|------|-------------|
+| `app` | 5000 | Express API + React frontend (production build) |
+| `mongo` | 27017 | MongoDB 6 with persistent volume |
+
+Environment variables can be set in `.env` or passed via shell. Defaults: `JWT_SECRET=changeme`, `PAYPAL_CLIENT_ID=sb`.
+
+The MCP server container is available under the `mcp` profile:
+```bash
+docker compose --profile mcp build mcp-server
+```
+
 ## Feature Flags
 
 The project includes a file-backed feature flag system with 25 flags controlling search, cart, checkout, admin, reviews, and performance features.
