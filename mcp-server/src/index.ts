@@ -63,6 +63,31 @@ const server = new McpServer({
 // --- Tools ---
 
 server.tool(
+  "list_features",
+  [
+    "List all feature flags with their key, name, status, and traffic percentage.",
+    "",
+    "WHEN TO USE: Call this tool when the user wants an overview of all features, their statuses, or to find a specific feature key.",
+    "WHEN NOT TO USE: Do not use this to get full details of a single feature — use get_feature_info instead.",
+    "",
+    "INPUT: None.",
+    "OUTPUT: JSON array of objects with fields: key, name, status, traffic_percentage.",
+  ].join("\n"),
+  {},
+  async () => {
+    const db = loadFeatures();
+    const result = Object.entries(db).map(([key, feature]) => ({
+      key,
+      name: feature.name,
+      status: feature.status,
+      traffic_percentage: feature.traffic_percentage,
+    }));
+
+    return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+  }
+);
+
+server.tool(
   "get_feature_info",
   [
     "Retrieve full metadata for a feature flag including status, traffic percentage, last modification date, and dependency states.",
