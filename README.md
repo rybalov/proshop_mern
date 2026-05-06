@@ -28,13 +28,14 @@ E-commerce platform for browsing products, managing a shopping cart, and placing
 proshop_mern/
 ├── backend/
 │   ├── config/db.js            # Mongoose connection (MONGO_URI)
-│   ├── controllers/            # Route handlers: product, user, order
+│   ├── controllers/            # Route handlers: product, user, order, featureFlag
 │   ├── data/                   # Seed data: users.js, products.js
+│   ├── features.json           # Feature flag database (read/write at runtime)
 │   ├── middleware/
 │   │   ├── authMiddleware.js   # JWT verify (protect) + admin guard
 │   │   └── errorMiddleware.js  # 404 handler + global error handler
 │   ├── models/                 # Mongoose schemas: User, Product, Order
-│   ├── routes/                 # Express routers: product, user, order, upload
+│   ├── routes/                 # Express routers: product, user, order, upload, featureFlag
 │   ├── utils/generateToken.js  # JWT sign helper (30-day expiry)
 │   ├── seeder.js               # Import / destroy sample data
 │   └── server.js               # Express entry point
@@ -44,10 +45,15 @@ proshop_mern/
 │       ├── constants/          # Action type strings (4 files)
 │       ├── reducers/           # Redux reducers (4 files)
 │       ├── components/         # Reusable UI: Header, Footer, Loader, Rating, etc.
-│       ├── screens/            # Page components (15 screens)
+│       ├── screens/            # Page components (16 screens)
 │       ├── store.js            # Redux store with localStorage hydration
 │       ├── App.js              # React Router layout
 │       └── index.js            # React entry point
+├── mcp-server/                 # MCP server for feature flag management
+│   ├── src/index.ts            # Server entry point (TypeScript, stdio transport)
+│   ├── package.json            # MCP server dependencies
+│   └── tsconfig.json           # TypeScript configuration
+├── .copilot/mcp.json           # MCP client config for GitHub Copilot CLI
 ├── uploads/                    # User-uploaded product images (served at /uploads)
 ├── package.json                # Root: backend deps + monorepo scripts
 ├── Procfile                    # Heroku: web: node backend/server.js
@@ -152,6 +158,31 @@ After `npm run dev`:
 ### Mongoose deprecation warnings
 - `useCreateIndex`, `useNewUrlParser`, `useUnifiedTopology` options in `config/db.js` are for Mongoose 5.x. If you upgrade to Mongoose 6+, remove these options (they are the defaults in v6).
 
+## Feature Flags
+
+The project includes a file-backed feature flag system with 25 flags controlling search, cart, checkout, admin, reviews, and performance features.
+
+### REST API
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/feature-flags` | GET | Returns all feature flags (reads `backend/features.json` on each request) |
+| `/api/feature-flags/:name` | GET | Returns a single feature flag by key |
+
+Both endpoints are public (no auth required). The backend reads the file on every request — no caching — so changes made by the MCP server are immediately visible.
+
+### Admin Dashboard
+
+An admin-only page at `/admin/features` displays all feature flags in a table:
+- **Name** — human-readable feature name
+- **Status** — Enabled / Disabled / Testing / Shadow (color-coded badge)
+- **Traffic %** — current rollout percentage
+- **Last Modified** — date of last change
+- **Dependencies** — other features this one depends on
+- **Description** — what the feature does
+
+Accessible via the **Admin → Features** dropdown in the header. Requires `isAdmin` user role.
+
 ## MCP Server (Feature Flags)
 
 The project includes an MCP (Model Context Protocol) server for managing feature flags. Located in `mcp-server/`, it provides tools to query, toggle, and roll out feature flags with dependency validation.
@@ -165,7 +196,7 @@ The project includes an MCP (Model Context Protocol) server for managing feature
 | MCP SDK | `@modelcontextprotocol/sdk` | MCP protocol implementation |
 | Validation | Zod | Tool parameter schema definition and validation |
 | Transport | stdio | Communication with MCP clients |
-| Data store | `mcp-server/data/features.json` | File-backed feature flag database |
+| Data store | `backend/features.json` | File-backed feature flag database |
 
 ### Architecture
 
@@ -173,18 +204,21 @@ The project includes an MCP (Model Context Protocol) server for managing feature
 mcp-server/
 ├── src/
 │   └── index.ts              # Server entry point, tool/resource registration
-├── data/
-│   └── features.json         # Feature flag database (read/write at runtime)
 ├── package.json              # MCP server dependencies and scripts
 └── tsconfig.json             # TypeScript configuration
+backend/
+└── features.json             # Feature flag database (shared with REST API)
 .copilot/
 └── mcp.json                  # MCP client configuration for GitHub Copilot CLI
 ```
+
+The MCP server and the Express backend share the same `backend/features.json` file. Changes made via MCP tools are immediately visible through the REST API without restarting the backend.
 
 ### Tools
 
 | Tool | Description | Key Constraint |
 |------|-------------|----------------|
+| `list_features` | Returns summary of all features (key, name, status, traffic %) | Read-only |
 | `get_feature_info` | Returns full feature metadata + dependency states | Read-only |
 | `set_feature_state` | Changes feature status (Enabled/Disabled/Testing/Shadow) | Cannot enable if any dependency is Disabled |
 | `adjust_traffic_rollout` | Sets traffic percentage 0–100 | Cannot set >0 when feature is Disabled |
