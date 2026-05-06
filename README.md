@@ -152,6 +152,85 @@ After `npm run dev`:
 ### Mongoose deprecation warnings
 - `useCreateIndex`, `useNewUrlParser`, `useUnifiedTopology` options in `config/db.js` are for Mongoose 5.x. If you upgrade to Mongoose 6+, remove these options (they are the defaults in v6).
 
+## MCP Server (Feature Flags)
+
+The project includes an MCP (Model Context Protocol) server for managing feature flags. Located in `mcp-server/`, it provides tools to query, toggle, and roll out feature flags with dependency validation.
+
+### Stack
+
+| Component | Technology | Purpose |
+|-----------|-----------|---------|
+| Runtime | Node.js 20+ | Execution environment |
+| Language | TypeScript 5 | Type safety and compilation |
+| MCP SDK | `@modelcontextprotocol/sdk` | MCP protocol implementation |
+| Validation | Zod | Tool parameter schema definition and validation |
+| Transport | stdio | Communication with MCP clients |
+| Data store | `mcp-server/data/features.json` | File-backed feature flag database |
+
+### Architecture
+
+```
+mcp-server/
+├── src/
+│   └── index.ts              # Server entry point, tool/resource registration
+├── data/
+│   └── features.json         # Feature flag database (read/write at runtime)
+├── package.json              # MCP server dependencies and scripts
+└── tsconfig.json             # TypeScript configuration
+.copilot/
+└── mcp.json                  # MCP client configuration for GitHub Copilot CLI
+```
+
+### Tools
+
+| Tool | Description | Key Constraint |
+|------|-------------|----------------|
+| `get_feature_info` | Returns full feature metadata + dependency states | Read-only |
+| `set_feature_state` | Changes feature status (Enabled/Disabled/Testing/Shadow) | Cannot enable if any dependency is Disabled |
+| `adjust_traffic_rollout` | Sets traffic percentage 0–100 | Cannot set >0 when feature is Disabled |
+
+### Setup
+
+```bash
+# Install MCP server dependencies
+npm install --prefix mcp-server
+
+# Build
+npm run build --prefix mcp-server
+
+# Development (no build required)
+npm run dev --prefix mcp-server
+```
+
+### Connecting to GitHub Copilot CLI
+
+The project includes `.copilot/mcp.json` — Copilot CLI auto-discovers it when launched from the project root:
+
+```bash
+# Build first
+npm run build --prefix mcp-server
+
+# Start Copilot CLI from the project root
+copilot
+
+# Verify with /mcp — should list "proshop-features" under MCP servers
+```
+
+### Connecting to Claude Desktop
+
+Add to `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "proshop-features": {
+      "command": "node",
+      "args": ["/absolute/path/to/proshop_mern/mcp-server/dist/index.js"]
+    }
+  }
+}
+```
+
 ## License
 
 MIT — Copyright (c) 2020 Traversy Media.
