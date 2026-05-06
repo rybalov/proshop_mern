@@ -28,3 +28,5 @@ yarn-error.log*
 # MCP server
 mcp-server/node_modules/
 mcp-server/dist/
+
+docs/project-data
