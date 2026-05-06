@@ -296,6 +296,55 @@ Add to `claude_desktop_config.json`:
 }
 ```
 
+## Vector Embeddings (pgvector)
+
+Chunks from `docs/project-data/chunks.jsonl` are embedded with **OpenAI text-embedding-3-small** (1536 dimensions) and stored in the pgvector PostgreSQL container.
+
+### Setup
+
+1. Add your OpenAI API key to `.env`:
+   ```
+   OPENAI_API_KEY=sk-...
+   ```
+
+2. Install Python dependencies:
+   ```bash
+   pip3 install -r scripts/requirements.txt
+   ```
+
+3. Make sure PostgreSQL (pgvector) is running:
+   ```bash
+   docker compose up postgres -d
+   ```
+
+4. Run the embedding script:
+   ```bash
+   python3 scripts/embed_chunks.py
+   ```
+
+This creates a `chunks` table with columns: `text`, `source_file`, `file_path`, `title`, `parent_headings`, `keywords`, `summary`, `language`, `embedding` (vector(1536)).
+
+### Querying
+
+```sql
+-- Similarity search example
+SELECT text, source_file, 1 - (embedding <=> '[...]'::vector) AS similarity
+FROM chunks
+ORDER BY embedding <=> '[...]'::vector
+LIMIT 5;
+```
+
+### Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `OPENAI_API_KEY` | — | Required. OpenAI API key |
+| `POSTGRES_HOST` | localhost | PostgreSQL host |
+| `POSTGRES_PORT` | 5432 | PostgreSQL port |
+| `POSTGRES_DB` | proshop | Database name |
+| `POSTGRES_USER` | proshop | Database user |
+| `POSTGRES_PASSWORD` | proshop | Database password |
+
 ## License
 
 MIT — Copyright (c) 2020 Traversy Media.
