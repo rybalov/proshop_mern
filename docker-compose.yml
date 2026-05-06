@@ -34,6 +34,18 @@ services:
     depends_on:
       - backend
 
+  postgres:
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-proshop}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-proshop}
+      - POSTGRES_DB=${POSTGRES_DB:-proshop}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - '5432:5432'
+
   mcp-server:
     build:
       context: .
@@ -46,4 +58,5 @@ services:
 
 volumes:
   mongo_data:
+  postgres_data:
   uploads:
