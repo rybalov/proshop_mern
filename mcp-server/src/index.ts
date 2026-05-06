@@ -8,7 +8,7 @@ import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const DATA_PATH = resolve(__dirname, "..", "data", "features.json");
+const DATA_PATH = resolve(__dirname, "..", "..", "backend", "features.json");
 
 // --- Feature Flag Data Store (file-backed) ---
 
