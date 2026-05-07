@@ -151,7 +151,20 @@ export default ScreenName
 - **Don't add class components** — the entire frontend uses functional components with hooks.
 - **Don't use `require()`** — project is `"type": "module"`. Always use ES `import`/`export`.
 
-## 7. Pull Request Approval Criteria
+## 7. Project Documentation Search (search-docs MCP)
+
+- For any questions about functionality, features, architecture, ADRs, runbooks, or incidents — **ALWAYS** use the `search_project_docs` MCP tool first.
+- It is faster and returns relevant chunks with metadata (source_file, parent_headings, score, snippet).
+- **ONLY** if vector search did not return the needed results, or you need the full file content from a found chunk's metadata → fall back to grep + read.
+- **DO NOT** start with grep + read across the project — it is slow and expensive in tokens.
+
+## 8. Feature Flag Management (feature-flags MCP)
+
+- When the user asks about a feature's status ("what's the status of gift_message?", "is search_v2 enabled?") — call `get_feature_info` from the feature-flags MCP. **Do not** read `features.json` directly.
+- When the user wants to change a status ("enable feature X", "move Y to Testing", "set traffic to 25%") — call the appropriate MCP tools (`set_feature_state`, `adjust_traffic_rollout`). **Never** edit `backend/features.json` manually via Edit / Write.
+- When the user asks for a list of all features — use the `list_features` tool. **Do not** grep the file.
+
+## 9. Pull Request Approval Criteria
 
 **Must have (blockers):**
 - All CI checks pass
