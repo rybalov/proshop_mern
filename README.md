@@ -307,9 +307,9 @@ Chunks from `docs/project-data/chunks.jsonl` are embedded with **OpenAI text-emb
    OPENAI_API_KEY=sk-...
    ```
 
-2. Install Python dependencies:
+2. Install scripts dependencies:
    ```bash
-   pip3 install -r scripts/requirements.txt
+   npm install --prefix scripts
    ```
 
 3. Make sure PostgreSQL (pgvector) is running:
@@ -317,9 +317,21 @@ Chunks from `docs/project-data/chunks.jsonl` are embedded with **OpenAI text-emb
    docker compose up postgres -d
    ```
 
-4. Run the embedding script:
+4. Chunk markdown files (optional — `chunks.jsonl` is already in the repo):
    ```bash
-   python3 scripts/embed_chunks.py
+   node scripts/chunk_markdown.js
+   ```
+
+5. Run the embedding script:
+   ```bash
+   node scripts/embed_chunks.js
+   ```
+
+6. Search:
+   ```bash
+   node scripts/search_chunks.js "your query" --top_k 5
+   node scripts/search_chunks.js "query" --source_file incidents
+   node scripts/search_chunks.js "query" --type adr
    ```
 
 This creates a `chunks` table with columns: `text`, `source_file`, `file_path`, `title`, `parent_headings`, `keywords`, `summary`, `language`, `embedding` (vector(1536)).
