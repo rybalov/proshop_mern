@@ -46,13 +46,25 @@ services:
     ports:
       - '5432:5432'
 
-  mcp-server:
+  mcp-feature-flags:
     build:
       context: .
-      dockerfile: mcp-server/Dockerfile
+      dockerfile: mcp-server-feature-flags/Dockerfile
     restart: 'no'
     volumes:
       - ./backend/features.json:/app/backend/features.json
+    profiles:
+      - mcp
+
+  mcp-search-docs:
+    build:
+      context: .
+      dockerfile: mcp-server-search-docs/Dockerfile
+    restart: 'no'
+    env_file:
+      - .env
+    depends_on:
+      - postgres
     profiles:
       - mcp
 

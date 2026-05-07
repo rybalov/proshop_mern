@@ -25,11 +25,14 @@ yarn-debug.log*
 yarn-error.log*
 .vscode/settings.json
 
-# MCP server
-mcp-server/node_modules/
-mcp-server/dist/
+# MCP servers
+mcp-server-feature-flags/node_modules/
+mcp-server-feature-flags/dist/
+mcp-server-search-docs/node_modules/
+mcp-server-search-docs/dist/
 
 # Scripts
 scripts/node_modules/
 
 docs/project-data.idea/
+docs/guides/
